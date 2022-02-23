@@ -30,11 +30,13 @@ Now, the user just has to confirm the purchase and soon they will get to enjoy a
 ### Init Project
 
 ```bash
-    git clone https://github.com/Visko93/Automation_puppeter.git
-    cd Automation_puppeter
-
-
-    node .\index.js
+git clone https://github.com/Visko93/Automation_puppeter.git
+```
+```bash
+cd Automation_puppeter
+```
+```bash
+node .\index.js
 ```
 ---
 
