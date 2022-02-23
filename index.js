@@ -1,5 +1,4 @@
 const request = require("request-promise");
-const fs = require("fs");
 const inquirer = require("inquirer");
 const cheerio = require("cheerio");
 const navigateToStore = require("./navigate");
@@ -7,7 +6,7 @@ const navigateToStore = require("./navigate");
 const BASE_URL = "https://www.goodreads.com";
 
 async function main() {
-  const genreQuestion = [
+  const genreQuestions = [
     {
       type: "list",
       name: "genre",
@@ -19,7 +18,7 @@ async function main() {
       filteringText: "Getting available genres...",
     },
   ];
-  const acceptSuggestionQuestion = [
+  const acceptSuggestionQuestions = [
     {
       type: "rawlist",
       name: "action",
@@ -41,28 +40,47 @@ async function main() {
   ];
 
   inquirer
-    .prompt(genreQuestion)
+    .prompt(genreQuestions)
     .then(({ genre }) => {
       console.log("Hi, welcome to the book shelf!");
 
-      const parseText = parseGenre(genre);
+      const parseText = parseGenreText(genre);
 
       const GENRE_URL = `${BASE_URL}/choiceawards/best-${parseText}-books-2020`;
       return getBestBooks(GENRE_URL); // array
     })
     .then((books) => {
-      const bookName = books[randomizeOption(books.length)].name;
+      const bookName = books[randomNumberGenerator(books.length)].name;
       console.log("\nWe suggest:");
       console.log("\x1b[32m%s\x1b[0m", bookName, "\n");
 
-      inquirer.prompt(acceptSuggestionQuestion).then(({ action }) => {
-        handleSelectedBook(action, bookName);
+      inquirer.prompt(acceptSuggestionQuestions).then(({ action }) => {
+        selectedBooksReducer(action, bookName);
       });
     });
 }
 
-const parseGenre = (string) =>
-  string.toLowerCase().split(" ").join("-").replaceAll("-&-", "-");
+function parseGenreText(string) {
+  return string.toLowerCase().split(" ").join("-").replaceAll("-&-", "-");
+}
+
+function selectedBooksReducer(selecteString, bookName) {
+  switch (selecteString) {
+    case "reset":
+      return main();
+    case "buy":
+      return navigateToStore(bookName, main);
+    default:
+      return console.log("Action not mapped");
+  }
+}
+
+function randomNumberGenerator(ceil = 0) {
+  let min = 0;
+  let max = Math.ceil(ceil);
+
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 async function getGenres() {
   const html = await request.get(`${BASE_URL}/choiceawards/best-books-2020`);
@@ -74,24 +92,6 @@ async function getGenres() {
   );
 
   return result;
-}
-
-function handleSelectedBook(selecteString, bookName) {
-  switch (selecteString) {
-    case "reset":
-      return main();
-    case "buy":
-      return navigateToStore(bookName, main);
-    default:
-      return console.log("Action not mapped");
-  }
-}
-
-function randomizeOption(ceil = 0) {
-  let min = 0;
-  let max = Math.ceil(ceil);
-
-  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 async function getBestBooks(url) {
